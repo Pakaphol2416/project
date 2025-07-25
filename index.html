@@ -5,7 +5,6 @@
   <title>วิเคราะห์หุ้นด้วย AI + กราฟ Interactive</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    /* --- (ใช้ CSS จากโค้ดเดิมเลย) --- */
     * {
       box-sizing: border-box;
     }
@@ -15,6 +14,7 @@
       margin: 0;
       padding: 20px;
       color: #333;
+      width: 100%;
       max-width: 900px;
       margin-left: auto;
       margin-right: auto;
@@ -147,30 +147,14 @@
       color: #7f8c8d;
       font-size: 0.9rem;
     }
-    /* Responsive */
-    @media (max-width: 600px) {
-      body {
-        padding: 15px;
-      }
-      button {
-        font-size: 1rem;
-        padding: 12px 20px;
-      }
-      table th, table td {
-        padding: 8px 10px;
-      }
-      #news ul {
-        max-height: 200px;
-      }
-    }
 
-    /* ปุ่มช่วงเวลา กราฟ */
     #timeButtons {
       margin-top: 20px;
       text-align: center;
+      flex-wrap: wrap;
     }
     #timeButtons button {
-      margin: 0 5px;
+      margin: 5px;
       padding: 8px 16px;
       background: #2980b9;
       color: white;
@@ -184,6 +168,36 @@
     #timeButtons button:hover {
       background: #1f618d;
     }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+      h1 {
+        font-size: 1.8rem;
+      }
+
+      input[type="text"] {
+        padding: 12px 16px;
+        font-size: 1rem;
+      }
+
+      button {
+        padding: 12px 24px;
+        font-size: 1.1rem;
+      }
+
+      table {
+        font-size: 0.9rem;
+      }
+
+      #news ul {
+        max-height: 200px;
+      }
+
+      #stockChart {
+        width: 100% !important;
+        height: auto !important;
+      }
+    }
   </style>
 </head>
 <body>
@@ -196,7 +210,6 @@
 
   <div id="result">ผลลัพธ์จะแสดงที่นี่...</div>
 
-  <!-- ปุ่มเลือกช่วงเวลา -->
   <div id="timeButtons" style="display:none;">
     <button data-range="1D" class="active" onclick="updateChartRange('1D', this)">1D</button>
     <button data-range="5D" onclick="updateChartRange('5D', this)">5D</button>
@@ -209,12 +222,11 @@
   </div>
 
   <div id="graph">
-    <canvas id="stockChart" width="900" height="400"></canvas>
+    <canvas id="stockChart"></canvas>
   </div>
 
   <div id="news"></div>
 
-  <!-- โหลด Chart.js จาก CDN -->
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
 
   <script>
@@ -255,7 +267,6 @@
           const changeClass3y = data.pct_change_3y > 0 ? 'positive' : (data.pct_change_3y < 0 ? 'negative' : '');
           const changeClass1y = data.pct_change_1y > 0 ? 'positive' : (data.pct_change_1y < 0 ? 'negative' : '');
 
-          // แสดงข้อมูลหุ้นเหมือนเดิม
           result.innerHTML = `
             <h2>${data.symbol} - ${data.company}</h2>
             <p><strong>อุตสาหกรรม:</strong> ${data.industry}</p>
@@ -284,19 +295,6 @@
             <p style="color:#e67e22;"><strong>⚠️ ความเสี่ยง:</strong> ${data.risk_warning}</p>
           `;
 
-          // ถ้าไม่มีข้อมูลกราฟแบบ base64 ให้ใช้ Chart.js แทน
-          graphDiv.style.display = "block";
-
-          // สมมติว่าข้อมูลกราฟหุ้นช่วงเวลาต่าง ๆ ส่งมาที่ data.price_history (ต้องอยู่ใน format ที่ใช้ได้)
-          // ตัวอย่างโครงสร้าง: 
-          // data.price_history = {
-          //   "1D": [{date: "...", close: ...}, ...],
-          //   "5D": [...],
-          //   "1M": [...],
-          //   ...
-          // }
-
-          // กรณีไม่มี price_history ให้ใช้ข้อมูลจำลอง (sample)
           if (!data.price_history) {
             data.price_history = {
               "1D": generateSampleData(24),
@@ -311,14 +309,10 @@
           }
 
           stockDataByRange = data.price_history;
-
-          // แสดงปุ่มช่วงเวลา
           timeButtonsDiv.style.display = "block";
-
-          // สร้างกราฟเริ่มต้นช่วง 1D
+          graphDiv.style.display = "block";
           createChart("1D");
 
-          // แสดงข่าว
           if (data.latest_news && data.latest_news.length > 0) {
             let newsHTML = `<h3>📰 ข่าวล่าสุด</h3><ul>`;
             data.latest_news.forEach(item => {
@@ -339,9 +333,8 @@
     }
 
     function generateSampleData(points) {
-      // สร้างข้อมูลสุ่มสำหรับกราฟ (ใช้กรณีไม่มีข้อมูลจริง)
       const now = Date.now();
-      const dayMs = 3600000; // 1 ชั่วโมง
+      const dayMs = 3600000;
       let data = [];
       let value = 100;
       for (let i = points - 1; i >= 0; i--) {
@@ -355,16 +348,12 @@
     function createChart(range) {
       const ctx = document.getElementById('stockChart').getContext('2d');
       const dataPoints = stockDataByRange[range];
-
       if (!dataPoints) return;
 
-      // แปลงข้อมูลเพื่อแสดงใน Chart.js
       const labels = dataPoints.map(d => d.date);
       const data = dataPoints.map(d => d.close);
 
-      if (chart) {
-        chart.destroy();
-      }
+      if (chart) chart.destroy();
 
       chart = new Chart(ctx, {
         type: 'line',
@@ -383,6 +372,7 @@
         },
         options: {
           responsive: true,
+          maintainAspectRatio: false,
           interaction: {
             mode: 'index',
             intersect: false,
@@ -417,10 +407,7 @@
 
     function updateChartRange(range, btn) {
       createChart(range);
-
-      // ปรับปุ่ม active
-      const buttons = document.querySelectorAll('#timeButtons button');
-      buttons.forEach(b => b.classList.remove('active'));
+      document.querySelectorAll('#timeButtons button').forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
     }
   </script>
