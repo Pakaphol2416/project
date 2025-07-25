@@ -14,7 +14,6 @@
       margin: 0;
       padding: 20px;
       color: #333;
-      width: 100%;
       max-width: 900px;
       margin-left: auto;
       margin-right: auto;
@@ -111,6 +110,10 @@
       margin-top: 30px;
       text-align: center;
     }
+    #graph canvas {
+      width: 100% !important;
+      height: auto !important;
+    }
     #news {
       margin-top: 30px;
       background: #fff;
@@ -147,7 +150,6 @@
       color: #7f8c8d;
       font-size: 0.9rem;
     }
-
     #timeButtons {
       margin-top: 20px;
       text-align: center;
@@ -168,34 +170,27 @@
     #timeButtons button:hover {
       background: #1f618d;
     }
-
-    /* Responsive */
-    @media (max-width: 768px) {
+    @media (max-width: 600px) {
+      body {
+        padding: 10px;
+      }
       h1 {
         font-size: 1.8rem;
       }
-
       input[type="text"] {
-        padding: 12px 16px;
         font-size: 1rem;
+        padding: 10px 14px;
       }
-
       button {
-        padding: 12px 24px;
-        font-size: 1.1rem;
+        font-size: 1rem;
+        padding: 12px;
       }
-
-      table {
-        font-size: 0.9rem;
+      table th, table td {
+        font-size: 0.95rem;
+        padding: 8px 10px;
       }
-
       #news ul {
         max-height: 200px;
-      }
-
-      #stockChart {
-        width: 100% !important;
-        height: auto !important;
       }
     }
   </style>
@@ -222,13 +217,12 @@
   </div>
 
   <div id="graph">
-    <canvas id="stockChart"></canvas>
+    <canvas id="stockChart" width="900" height="400"></canvas>
   </div>
 
   <div id="news"></div>
 
   <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
-
   <script>
     let chart = null;
     let stockDataByRange = {};
@@ -295,6 +289,8 @@
             <p style="color:#e67e22;"><strong>⚠️ ความเสี่ยง:</strong> ${data.risk_warning}</p>
           `;
 
+          graphDiv.style.display = "block";
+
           if (!data.price_history) {
             data.price_history = {
               "1D": generateSampleData(24),
@@ -309,8 +305,9 @@
           }
 
           stockDataByRange = data.price_history;
+
           timeButtonsDiv.style.display = "block";
-          graphDiv.style.display = "block";
+
           createChart("1D");
 
           if (data.latest_news && data.latest_news.length > 0) {
@@ -334,12 +331,12 @@
 
     function generateSampleData(points) {
       const now = Date.now();
-      const dayMs = 3600000;
+      const hourMs = 3600000; // 1 ชั่วโมง
       let data = [];
       let value = 100;
       for (let i = points - 1; i >= 0; i--) {
         value += (Math.random() - 0.5) * 2;
-        const date = new Date(now - i * dayMs);
+        const date = new Date(now - i * hourMs);
         data.push({ date: date.toISOString().slice(0, 10), close: parseFloat(value.toFixed(2)) });
       }
       return data;
@@ -349,11 +346,12 @@
       const ctx = document.getElementById('stockChart').getContext('2d');
       const dataPoints = stockDataByRange[range];
       if (!dataPoints) return;
-
       const labels = dataPoints.map(d => d.date);
       const data = dataPoints.map(d => d.close);
 
-      if (chart) chart.destroy();
+      if (chart) {
+        chart.destroy();
+      }
 
       chart = new Chart(ctx, {
         type: 'line',
@@ -372,7 +370,6 @@
         },
         options: {
           responsive: true,
-          maintainAspectRatio: false,
           interaction: {
             mode: 'index',
             intersect: false,
@@ -407,9 +404,11 @@
 
     function updateChartRange(range, btn) {
       createChart(range);
-      document.querySelectorAll('#timeButtons button').forEach(b => b.classList.remove('active'));
+      const buttons = document.querySelectorAll('#timeButtons button');
+      buttons.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
     }
   </script>
+
 </body>
 </html>
